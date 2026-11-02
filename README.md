@@ -42,21 +42,26 @@ set it. No token is ever stored by this script or written into the repository.
 
 ## Configure
 
-Every variable is optional. Set them in your shell config next to the alias.
-
-| Variable | Meaning |
-| --- | --- |
-| `DIGEST_REPOS` | `owner/repo` list, comma separated. Every open, non-`blocked` PR in these repos is listed, whoever opened it. Unset means skip this entirely. |
-| `DIGEST_GITHUB_ORGS` | Org list, comma separated. Scopes the "requested from you" and "you reviewed" searches. Unset searches all of GitHub, which is usually what you want for a personal account. |
-| `DIGEST_MODEL` | Model used by `--ai`. Default `claude-haiku-4-5`. |
-| `DIGEST_STATE` | Where `--ack` keeps its watermarks. Default `~/.pr-review-digest.json`. |
-
-For example:
+Copy the example and edit it. The file sits next to the script, is optional, and is
+git-ignored, so your org and repo names stay off GitHub.
 
 ```sh
-export DIGEST_GITHUB_ORGS=my-org
-export DIGEST_REPOS=my-org/web,my-org/api
+cp digest.config.example.json digest.config.json
 ```
+
+| Key | Meaning |
+| --- | --- |
+| `teamRepos` | `owner/repo` list. Every open, non-`blocked` PR in these repos is listed, whoever opened it. Omit to skip this entirely. |
+| `githubOrgs` | Orgs that scope the "requested from you" and "you reviewed" searches. Omit to search all of GitHub, which is usually what you want for a personal account. |
+| `model` | Model used by `--ai`. Default `claude-haiku-4-5`. |
+| `state` | Where `--ack` keeps its watermarks. A relative path resolves against the config file, so `./.pr-review-digest.json` keeps them beside the script. Default `~/.pr-review-digest.json`. |
+
+Every key also has an environment variable, which **wins over the file**, so cron jobs and
+CI can run with no config file at all: `DIGEST_REPOS`, `DIGEST_GITHUB_ORGS`, `DIGEST_MODEL`,
+`DIGEST_STATE`. Lists are comma separated. `DIGEST_CONFIG` points at a different config file.
+
+With no configuration whatsoever the script still works: you get every open PR across
+GitHub where your review is requested or which you have already reviewed.
 
 ## Flags
 

@@ -1,3 +1,6 @@
+# Your own settings: org and repo names are nobody else's business.
+digest.config.json
+
 # Local watermarks written by --ack. Contains the PRs you review, so it stays out of git.
 .pr-review-digest.json
 # Default output of --md

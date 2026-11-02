@@ -13,27 +13,46 @@
 // Auth:     GitHub only, via `gh auth login` (or GITHUB_TOKEN).
 //           --ai one-liners shell out to the local `claude` CLI, which uses your
 //           Claude Code login. No ANTHROPIC_API_KEY, no API billing.
-// Config:   DIGEST_REPOS       comma-separated owner/repo list always shown (optional)
-//           DIGEST_GITHUB_ORGS comma-separated orgs to scope your own PRs to (optional;
-//                              unset searches all of GitHub, which is usually what you want)
-//           DIGEST_MODEL       model for --ai  (default claude-haiku-4-5)
-//           DIGEST_STATE       where --ack keeps its watermarks
-//                              (default ~/.pr-review-digest.json)
+// Config:   Optional digest.config.json next to this script; see digest.config.example.json.
+//           Every key can also be given as an environment variable, which wins over the file:
+//             teamRepos  / DIGEST_REPOS        owner/repo list always shown in full
+//             githubOrgs / DIGEST_GITHUB_ORGS  orgs to scope your own PRs to (unset = all
+//                                              of GitHub, usually what you want)
+//             model      / DIGEST_MODEL        model for --ai (default claude-haiku-4-5)
+//             state      / DIGEST_STATE        where --ack keeps its watermarks; a relative
+//                                              path resolves against the config file
+//                                              (default ~/.pr-review-digest.json)
+//           DIGEST_CONFIG points at a different config file.
 // Needs Node 18+ (built-in fetch). No npm dependencies.
 
 import { execFileSync, execSync } from 'node:child_process';
 import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// Your settings live in digest.config.json next to this script. It is optional and
+// git-ignored, so the file can hold private org and repo names. Environment variables
+// still win over it, which keeps the script usable from cron or CI with no file at all.
+const CONFIG_FILE = process.env.DIGEST_CONFIG || fileURLToPath(new URL('./digest.config.json', import.meta.url));
+const fileCfg = (() => {
+    try { return JSON.parse(readFileSync(CONFIG_FILE, 'utf8')); } catch { return {}; }
+})();
+
 const csv = (v) => (v || '').split(',').map((s) => s.trim()).filter(Boolean);
+// Accepts either a real array or a comma-separated string, from either source.
+const listOf = (envValue, fileValue) => {
+    const fromEnv = csv(envValue);
+    if (fromEnv.length) return fromEnv;
+    return Array.isArray(fileValue) ? fileValue.map((x) => String(x).trim()).filter(Boolean) : csv(fileValue);
+};
 
 const CONFIG = {
     // Scopes the "your review is requested" / "you reviewed" searches. Empty = all of GitHub.
-    githubOrgs: csv(process.env.DIGEST_GITHUB_ORGS),
+    githubOrgs: listOf(process.env.DIGEST_GITHUB_ORGS, fileCfg.githubOrgs),
     // Open, non-blocked PRs in these repos are listed whoever they belong to. Empty = skip.
-    teamRepos: csv(process.env.DIGEST_REPOS),
-    model: process.env.DIGEST_MODEL || 'claude-haiku-4-5',
+    teamRepos: listOf(process.env.DIGEST_REPOS, fileCfg.teamRepos),
+    model: process.env.DIGEST_MODEL || fileCfg.model || 'claude-haiku-4-5',
 };
 
 // ---------- CLI ----------
@@ -205,7 +224,10 @@ export function classify(pr, me) {
 // ---------- "I reviewed this; ask me again when it changes" ----------
 // A JSON file of `repo#number` -> ISO timestamp. An acked PR is hidden until somebody
 // other than you pushes, comments, or reviews after that moment.
-const STATE_FILE = process.env.DIGEST_STATE || `${homedir()}/.pr-review-digest.json`;
+// A relative `state` in the config file resolves against that file, so you can keep the
+// watermarks beside the script without writing an absolute path.
+const STATE_FILE = process.env.DIGEST_STATE
+    || (fileCfg.state ? resolve(dirname(CONFIG_FILE), fileCfg.state) : `${homedir()}/.pr-review-digest.json`);
 
 const loadAcks = () => { try { return JSON.parse(readFileSync(STATE_FILE, 'utf8')); } catch { return {}; } };
 const saveAcks = (acks) => writeFileSync(STATE_FILE, `${JSON.stringify(acks, null, 2)}\n`);

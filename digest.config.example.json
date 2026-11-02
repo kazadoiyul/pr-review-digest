@@ -1,0 +1,6 @@
+{
+  "githubOrgs": ["my-org"],
+  "teamRepos": ["my-org/web", "my-org/api"],
+  "model": "claude-haiku-4-5",
+  "state": "~/.pr-review-digest.json"
+}
