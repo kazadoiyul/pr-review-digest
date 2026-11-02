@@ -1,0 +1,11 @@
+{
+  "name": "pr-review-digest",
+  "version": "1.0.0",
+  "description": "Terminal digest of the GitHub pull requests waiting on you",
+  "type": "module",
+  "bin": { "pr-review-digest": "./pr-review-digest.mjs" },
+  "scripts": { "test": "node pr-review-digest.test.mjs" },
+  "engines": { "node": ">=18" },
+  "license": "MIT",
+  "private": false
+}

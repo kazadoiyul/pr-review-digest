@@ -1,0 +1,6 @@
+# Local watermarks written by --ack. Contains the PRs you review, so it stays out of git.
+.pr-review-digest.json
+# Default output of --md
+pr-digest-*.md
+node_modules/
+.DS_Store
