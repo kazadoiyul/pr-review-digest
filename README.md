@@ -54,7 +54,7 @@ cp digest.config.example.json digest.config.json
 | `teamRepos` | `owner/repo` list. Every open, non-`blocked` PR in these repos is listed, whoever opened it. Omit to skip this entirely. |
 | `githubOrgs` | Orgs that scope the "requested from you" and "you reviewed" searches. Omit to search all of GitHub, which is usually what you want for a personal account. |
 | `model` | Model used by `--ai`. Default `claude-haiku-4-5`. |
-| `state` | Where `--ack` keeps its watermarks. A relative path resolves against the config file, so `./.pr-review-digest.json` keeps them beside the script. Default `~/.pr-review-digest.json`. |
+| `state` | Where `--ack` keeps its watermarks. A relative path resolves against the config file, so `./.pr-review-digest.json` keeps them beside the script. `~` is not expanded here, so use a relative or absolute path. Default `~/.pr-review-digest.json`. |
 
 Every key also has an environment variable, which **wins over the file**, so cron jobs and
 CI can run with no config file at all: `DIGEST_REPOS`, `DIGEST_GITHUB_ORGS`, `DIGEST_MODEL`,
